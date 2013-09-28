@@ -29,8 +29,7 @@ Oauth.initiateLogin = function(credentialToken, url, credentialRequestCompleteCa
 
 var openCenteredPopup = function(url) {
 
-  var fixedUrl = url.slice(1); // Fixes android issue where it adds aditional / to url, does not affect ios
-  var newwindow = window.open(fixedUrl, '_blank', 'location=yes', closebuttoncaption="Return");
+  var newwindow = window.open(url, '_blank', 'location=yes', closebuttoncaption="Return");
   if (newwindow.focus)
     newwindow.focus();
   return newwindow;
