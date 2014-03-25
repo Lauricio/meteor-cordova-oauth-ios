@@ -1,4 +1,5 @@
 var Fiber = Npm.require('fibers');
+var url = Npm.require('url');
 
 Oauth = {};
 OauthTest = {};
@@ -131,7 +132,7 @@ middleware = function (req, res, next) {
 
 OauthTest.middleware = middleware;
 
-// Handle /_oauth/* paths and extract the service name
+// Handle /_oauth/* paths and extract the service name.
 //
 // @returns {String|null} e.g. "facebook", or null if this isn't an
 // oauth request
@@ -161,10 +162,23 @@ var ensureConfigured = function(serviceName) {
 Oauth._renderOauthResults = function(res, query) {
   // We support ?close and ?redirect=URL. Any other query should
   // just serve a blank page
-  if ('close' in query) { // check with 'in' because we don't set a value
+  if (query.error) {
+    Log.warn("Error in Oauth Server: " + query.error);
+    closePopup(res);
+  } else if ('close' in query) { // check with 'in' because we don't set a value
     closePopup(res);
   } else if (query.redirect) {
-    res.writeHead(302, {'Location': query.redirect});
+    // Only redirect to URLs on the same domain as this app.
+    // XXX No code in core uses this code path right now.
+    var redirectHostname = url.parse(query.redirect).hostname;
+    var appHostname = url.parse(Meteor.absoluteUrl()).hostname;
+    if (appHostname === redirectHostname) {
+      // We rely on node to make sure the header is really only a single header
+      // (not, for example, a url with a newline and then another header).
+      res.writeHead(302, {'Location': query.redirect});
+    } else {
+      res.writeHead(400);
+    }
     res.end();
   } else {
     res.writeHead(200, {'Content-Type': 'text/html'});
@@ -178,4 +192,3 @@ var closePopup = function(res) {
         '<html><head><script>window.location = "webviewclose";</script></head></html>';
   res.end(content, 'utf-8');
 };
-
